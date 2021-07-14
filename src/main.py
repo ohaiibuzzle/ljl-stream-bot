@@ -3,6 +3,7 @@ from discord.ext import commands
 import os, sqlite3
 
 if not os.path.isdir('runtime'):
+    os.mkdir('runtime')
     print("Please populate the /runtime directory with your credentials!")
     exit(0)
 
