@@ -14,6 +14,7 @@ async def on_ready():
     print('We have logged in as {0.user}'.format(client))
 
 client.load_extension('update_lists')
+#client.load_extension('web_interface.web_interface')
 
 key = ''
 with open('runtime/discord.key', 'r') as keyfile:
