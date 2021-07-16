@@ -92,17 +92,25 @@ class UpdatePlayersStatus(commands.Cog):
                     continue
         print("Done.")
         print(f"Took {(time.time()-start_time)}s")
+        print(f"Next check scheduled at {self.update_loop.next_iteration}")
 
     @staticmethod
     async def async_check_live_twitch_player(streamName: str) -> bool:
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, UpdatePlayersStatus.check_live_twitch_player, streamName)
+        try:
+            return await asyncio.wait_for(loop.run_in_executor(None, UpdatePlayersStatus.check_live_twitch_player, streamName), timeout=15.0)
+        except asyncio.TimeoutError:
+            print(f"{streamName} check timed out.")
+            return False, None, None
 
     @staticmethod
     async def async_check_live_mildom_player(streamName: str) -> bool:
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, UpdatePlayersStatus.check_live_mildom_player, streamName)
-
+        try:
+            return await asyncio.wait_for(loop.run_in_executor(None, UpdatePlayersStatus.check_live_mildom_player, streamName), timeout=15.0)
+        except asyncio.TimeoutError:
+            print(f"{streamName} check timed out.")
+            return False, None, None
 
     @staticmethod
     def check_live_twitch_player(streamName: str) -> bool:
@@ -114,16 +122,20 @@ class UpdatePlayersStatus(commands.Cog):
         helix = twitch.Helix(key, secret)
         user = helix.user(streamName)
         if user.is_live:
+            print(f"Stream {streamName} is online")
             return user.is_live, user.stream.title, user.stream.thumbnail_url.format(width=1280, height=720)
         else:
+            print(f"Stream {streamName} is offline")
             return user.is_live, None, None
         
     @staticmethod
     def check_live_mildom_player(streamName: int) -> bool:
         user = mildom.User(streamName)
         if user.is_live:
+            print(f"Stream {streamName} is online")
             return user.is_live, user.latest_live_title, user.latest_live_thumbnail
         else:
+            print(f"Stream {streamName} is offline")
             return user.is_live, None, None
 
 
@@ -140,9 +152,11 @@ class UpdatePlayersStatus(commands.Cog):
             live_span_tag = soup.find('div', {'class': 'c-content__title'})
             if live_span_tag:
                 if live_span_tag.text == 'Live':
+                    print(f"Stream {streamName} is online")
                     img_link = soup.find('img', {'class': 'p-animation__thumbnail'})['src']
                     title = soup.find('a', {'class': 'c-thumbnailVideo__title'})['title']
                     return live_span_tag.text == 'Live', title, img_link
+            print(f"Stream {streamName} is offline")
             return False, None, None
 
     @staticmethod
