@@ -92,7 +92,7 @@ class UpdatePlayersStatus(commands.Cog):
                     continue
         print("Done.")
         print(f"Took {(time.time()-start_time)}s")
-        print(f"Next check scheduled at {self.update_loop.next_iteration}")
+        print(f"Iteration {self.update_loop.current_loop} completed. Next check scheduled at {self.update_loop.next_iteration}")
 
     @staticmethod
     async def async_check_live_twitch_player(streamName: str) -> bool:
