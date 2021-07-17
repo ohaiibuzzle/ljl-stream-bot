@@ -22,7 +22,6 @@ secret = ''
 with open('runtime/twitch.key', 'r') as keyf:
     key = keyf.readline().strip()
     secret = keyf.readline().strip()
-helix = twitch.Helix(key, secret)
 
 class UpdatePlayersStatus(commands.Cog):
     fallback = "?fallback=https:/source.boringavatars.com/beam/400/LnlyHikikomori?colors=55CDFC%2CF7A8B8%2CFFFFFF%2CF7A8B8%2C55CDFC"
@@ -51,12 +50,13 @@ class UpdatePlayersStatus(commands.Cog):
         channel = discord.utils.find(lambda c: c.id == 864516198384664636, self.client.get_all_channels())
         print("Checking...")
         start_time = time.time()
+        helix = twitch.Helix(key, secret)
         async with aiosqlite.connect(DATABASE) as db:
             q = await db.execute('''SELECT Name, StreamName, IsLive, Link, Platform, Twitter FROM LJLInfo''')
             async for player in q:
                 embed_thumbnail = "https://unavatar.io/twitter/" + player[5][1:] + self.fallback if player[5] else None
                 if (player[4] == 'Twitch'):
-                    status, stream_title, stream_thumbnail = await UpdatePlayersStatus.async_check_live_twitch_player(player[1])
+                    status, stream_title, stream_thumbnail = await UpdatePlayersStatus.async_check_live_twitch_player(helix, player[1])
                     #print(f"{player[0]}: {status}")
                     if status and player[2] == 0:
                         embed, thumb_file = await UpdatePlayersStatus.live_embed(player[0], player[3], player[4], "https://twitch.tv/favicon.ico", stream_title, stream_thumbnail, embed_thumbnail)
@@ -104,10 +104,10 @@ class UpdatePlayersStatus(commands.Cog):
         print(f"Iteration {self.update_loop.current_loop} completed. Next check scheduled at {self.update_loop.next_iteration}")
 
     @staticmethod
-    async def async_check_live_twitch_player(streamName: str) -> bool:
+    async def async_check_live_twitch_player(helix: twitch.Helix, streamName: str) -> bool:
         loop = asyncio.get_event_loop()
         try:
-            return await asyncio.wait_for(loop.run_in_executor(None, UpdatePlayersStatus.check_live_twitch_player, streamName), timeout=15.0)
+            return await asyncio.wait_for(loop.run_in_executor(None, UpdatePlayersStatus.check_live_twitch_player, helix, streamName), timeout=15.0)
         except asyncio.TimeoutError:
             print(f"Stream {streamName} check timed out.")
             return False, None, None
@@ -128,7 +128,7 @@ class UpdatePlayersStatus(commands.Cog):
             return False, None, None
 
     @staticmethod
-    def check_live_twitch_player(streamName: str) -> bool:
+    def check_live_twitch_player(helix:twitch.Helix, streamName: str) -> bool:
         user = helix.user(streamName)
         if user.is_live:
             print(f"Stream {streamName} is online")
