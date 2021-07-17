@@ -17,6 +17,13 @@ from twitch.helix.models import stream
 
 DATABASE = 'runtime/links.db'
 
+key = ''
+secret = ''
+with open('runtime/twitch.key', 'r') as keyf:
+    key = keyf.readline().strip()
+    secret = keyf.readline().strip()
+helix = twitch.Helix(key, secret)
+
 class UpdatePlayersStatus(commands.Cog):
     def __init__(self, client: commands.Bot) -> None:
         self.client = client
@@ -100,7 +107,10 @@ class UpdatePlayersStatus(commands.Cog):
         try:
             return await asyncio.wait_for(loop.run_in_executor(None, UpdatePlayersStatus.check_live_twitch_player, streamName), timeout=15.0)
         except asyncio.TimeoutError:
-            print(f"{streamName} check timed out.")
+            print(f"Stream {streamName} check timed out.")
+            return False, None, None
+        except Exception as e:
+            print(f"Exception while checking stream {streamName}: {e}")
             return False, None, None
 
     @staticmethod
@@ -111,15 +121,12 @@ class UpdatePlayersStatus(commands.Cog):
         except asyncio.TimeoutError:
             print(f"{streamName} check timed out.")
             return False, None, None
+        except Exception as e:
+            print(f"Exception while checking stream {streamName}: {e}")
+            return False, None, None
 
     @staticmethod
     def check_live_twitch_player(streamName: str) -> bool:
-        key = ''
-        secret = ''
-        with open('runtime/twitch.key', 'r') as keyf:
-            key = keyf.readline().strip()
-            secret = keyf.readline().strip()
-        helix = twitch.Helix(key, secret)
         user = helix.user(streamName)
         if user.is_live:
             print(f"Stream {streamName} is online")
@@ -145,20 +152,24 @@ class UpdatePlayersStatus(commands.Cog):
         header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0'}
         timeout = aiohttp.ClientTimeout(total=15)
 
-        async with aiohttp.ClientSession(timeout=timeout, headers=header) as session:
-            resp = await session.get(endpoint + streamName)
-            soup = BeautifulSoup(await resp.read(), features="html.parser")
-            #print(soup)
-            live_span_tag = soup.find('div', {'class': 'c-content__title'})
-            if live_span_tag:
-                if live_span_tag.text == 'Live':
-                    print(f"Stream {streamName} is online")
-                    img_link = soup.find('img', {'class': 'p-animation__thumbnail'})['src']
-                    title = soup.find('a', {'class': 'c-thumbnailVideo__title'})['title']
-                    return live_span_tag.text == 'Live', title, img_link
-            print(f"Stream {streamName} is offline")
+        try:
+            async with aiohttp.ClientSession(timeout=timeout, headers=header) as session:
+                resp = await session.get(endpoint + streamName)
+                soup = BeautifulSoup(await resp.read(), features="html.parser")
+                #print(soup)
+                live_span_tag = soup.find('div', {'class': 'c-content__title'})
+                if live_span_tag:
+                    if live_span_tag.text == 'Live':
+                        print(f"Stream {streamName} is online")
+                        img_link = soup.find('img', {'class': 'p-animation__thumbnail'})['src']
+                        title = soup.find('a', {'class': 'c-thumbnailVideo__title'})['title']
+                        return live_span_tag.text == 'Live', title, img_link
+                print(f"Stream {streamName} is offline")
+                return False, None, None
+        except Exception as e:
+            print(f"Exception while checking stream {streamName}: {e}")
             return False, None, None
-
+        
     @staticmethod
     async def live_embed(player: str, stream_link: str, platform: str, footer_icon: str, title: str, thumbnail_url: str, embed_thumbnail: str = None) -> discord.Embed:
         to_return = discord.Embed(title=f"{player} went online on {platform}", url=stream_link)
