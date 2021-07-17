@@ -24,7 +24,7 @@ with open('runtime/twitch.key', 'r') as keyf:
     secret = keyf.readline().strip()
 
 class UpdatePlayersStatus(commands.Cog):
-    fallback = "?fallback=https:/source.boringavatars.com/beam/400/LnlyHikikomori?colors=55CDFC%2CF7A8B8%2CFFFFFF%2CF7A8B8%2C55CDFC"
+    fallback = "?fallback=https://source.boringavatars.com/beam/400/LnlyHikikomori?colors=55CDFC%2CF7A8B8%2CFFFFFF%2CF7A8B8%2C55CDFC"
 
     def __init__(self, client: commands.Bot) -> None:
         self.client = client
