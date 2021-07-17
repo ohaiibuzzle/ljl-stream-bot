@@ -25,6 +25,8 @@ with open('runtime/twitch.key', 'r') as keyf:
 helix = twitch.Helix(key, secret)
 
 class UpdatePlayersStatus(commands.Cog):
+    fallback = "?fallback=https:/source.boringavatars.com/beam/400/LnlyHikikomori?colors=55CDFC%2CF7A8B8%2CFFFFFF%2CF7A8B8%2C55CDFC"
+
     def __init__(self, client: commands.Bot) -> None:
         self.client = client
         #self.db = sqlite3.connect(DATABASE)
@@ -52,7 +54,7 @@ class UpdatePlayersStatus(commands.Cog):
         async with aiosqlite.connect(DATABASE) as db:
             q = await db.execute('''SELECT Name, StreamName, IsLive, Link, Platform, Twitter FROM LJLInfo''')
             async for player in q:
-                embed_thumbnail = "https://unavatar.io/twitter/" + player[5][1:] if player[5] else None
+                embed_thumbnail = "https://unavatar.io/twitter/" + player[5][1:] + self.fallback if player[5] else None
                 if (player[4] == 'Twitch'):
                     status, stream_title, stream_thumbnail = await UpdatePlayersStatus.async_check_live_twitch_player(player[1])
                     #print(f"{player[0]}: {status}")
