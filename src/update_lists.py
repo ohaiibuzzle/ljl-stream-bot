@@ -57,6 +57,8 @@ class UpdatePlayersStatus(commands.Cog):
                 embed_thumbnail = "https://unavatar.io/twitter/" + player[5][1:] + self.fallback if player[5] else None
                 if (player[4] == 'Twitch'):
                     status, stream_title, stream_thumbnail = await UpdatePlayersStatus.async_check_live_twitch_player(helix, player[1])
+                    if status is None:
+                        continue
                     #print(f"{player[0]}: {status}")
                     if status and player[2] == 0:
                         embed, thumb_file = await UpdatePlayersStatus.live_embed(player[0], player[3], player[4], "https://twitch.tv/favicon.ico", stream_title, stream_thumbnail, embed_thumbnail)
@@ -71,6 +73,8 @@ class UpdatePlayersStatus(commands.Cog):
                         await db.commit()
                 elif (player[4] == 'Mildom'):
                     status, stream_title, stream_thumbnail = await UpdatePlayersStatus.async_check_live_mildom_player(int(player[1]))
+                    if status is None:
+                        continue
                     #print(f"{player[0]}: {status}")
                     if status and player[2] == 0:
                         embed, thumb_file = await UpdatePlayersStatus.live_embed(player[0], player[3], player[4], "https://www.mildom.com/assets/mildom_logo_big.png", stream_title, stream_thumbnail, embed_thumbnail)
@@ -85,6 +89,8 @@ class UpdatePlayersStatus(commands.Cog):
                         await db.commit()
                 elif (player[4] == 'OPENREC.tv'):
                     status, stream_title, stream_thumbnail = await UpdatePlayersStatus.check_live_openrectv_player(player[1])
+                    if status is None:
+                        continue
                     #print(f"{player[0]}: {status}")
                     if status and player[2] == 0:
                         embed, thumb_file = await UpdatePlayersStatus.live_embed(player[0], player[3], player[4], "https://www.openrec.tv/favicon.ico", stream_title, stream_thumbnail, embed_thumbnail)
@@ -110,10 +116,10 @@ class UpdatePlayersStatus(commands.Cog):
             return await asyncio.wait_for(loop.run_in_executor(None, UpdatePlayersStatus.check_live_twitch_player, helix, streamName), timeout=15.0)
         except asyncio.TimeoutError:
             print(f"Stream {streamName} check timed out.")
-            return False, None, None
+            return None, None, None
         except Exception as e:
             print(f"Exception while checking stream {streamName}: {e}")
-            return False, None, None
+            return None, None, None
 
     @staticmethod
     async def async_check_live_mildom_player(streamName: str) -> bool:
@@ -122,10 +128,10 @@ class UpdatePlayersStatus(commands.Cog):
             return await asyncio.wait_for(loop.run_in_executor(None, UpdatePlayersStatus.check_live_mildom_player, streamName), timeout=15.0)
         except asyncio.TimeoutError:
             print(f"{streamName} check timed out.")
-            return False, None, None
+            return None, None, None
         except Exception as e:
             print(f"Exception while checking stream {streamName}: {e}")
-            return False, None, None
+            return None, None, None
 
     @staticmethod
     def check_live_twitch_player(helix:twitch.Helix, streamName: str) -> bool:
@@ -170,7 +176,7 @@ class UpdatePlayersStatus(commands.Cog):
                 return False, None, None
         except Exception as e:
             print(f"Exception while checking stream {streamName}: {e}")
-            return False, None, None
+            return None, None, None
         
     @staticmethod
     async def live_embed(player: str, stream_link: str, platform: str, footer_icon: str, title: str, thumbnail_url: str, embed_thumbnail: str = None) -> discord.Embed:
