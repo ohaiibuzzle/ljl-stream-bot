@@ -1,9 +1,7 @@
-from os import stat
-from discord import client
+from typing_extensions import runtime
 from discord.ext import commands, tasks
 import discord
-import sqlite3, aiosqlite
-from discord.ext.commands.core import check
+import aiosqlite
 import twitch
 import asyncio
 import mildom
@@ -11,23 +9,31 @@ import aiohttp
 from bs4 import BeautifulSoup
 import time
 import io
+import configparser
+import datetime, pytz
+import pickledb
 
-from twitch.helix.models import stream
 
-
+SECRETS = 'runtime/config.ini'
+PERSIST_DB = 'runtime/persist.json'
 DATABASE = 'runtime/links.db'
 
-key = ''
-secret = ''
-with open('runtime/twitch.key', 'r') as keyf:
-    key = keyf.readline().strip()
-    secret = keyf.readline().strip()
+config = configparser.ConfigParser()
+config.read(SECRETS)
+
+key = config['Secrets']['twitch_client_id']
+secret = config['Secrets']['twitch_client_secret']
+msg_channel = int(config['Secrets']['msg_channel_id'])
+
+persist_db = pickledb.load(PERSIST_DB, True)
 
 class UpdatePlayersStatus(commands.Cog):
     fallback = "?fallback=https://source.boringavatars.com/beam/400/LnlyHikikomori?colors=55CDFC%2CF7A8B8%2CFFFFFF%2CF7A8B8%2C55CDFC"
 
     def __init__(self, client: commands.Bot) -> None:
         self.client = client
+        if persist_db.get('was_active'):
+            self.update_loop.start()
         #self.db = sqlite3.connect(DATABASE)
 
     @commands.command()
@@ -36,18 +42,20 @@ class UpdatePlayersStatus(commands.Cog):
         if seconds is not None:
             self.update_loop.change_interval(seconds=seconds)
         self.update_loop.start()
+        persist_db.set('was_active', True)
         await ctx.send("Stream alert started...")
     
     @commands.command()
     @commands.has_permissions(administrator=True)
     async def stopUpdate(self, ctx):
+        persist_db.set('was_active', False)
         self.update_loop.stop()
         self.update_loop.cancel()
         await ctx.send("Stream alert stopped")    
 
     @tasks.loop(seconds=300)
     async def update_loop(self):
-        channel = discord.utils.find(lambda c: c.id == 864516198384664636, self.client.get_all_channels())
+        channel = discord.utils.find(lambda c: c.id == msg_channel, self.client.get_all_channels())
         print("Checking...")
         start_time = time.time()
         helix = twitch.Helix(key, secret)
@@ -107,6 +115,8 @@ class UpdatePlayersStatus(commands.Cog):
                     continue
         print("Done.")
         print(f"Took {(time.time()-start_time)}s")
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, persist_db.set, 'last_update', f"{str(datetime.datetime.now(pytz.timezone('Asia/Tokyo')))[:-16]} JST")
         print(f"Iteration {self.update_loop.current_loop} completed. Next check scheduled at {self.update_loop.next_iteration}")
 
     @staticmethod

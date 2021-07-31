@@ -1,20 +1,23 @@
 from aiohttp import web
-from aiohttp.web_response import Response
 import aiohttp_jinja2
-from aiosqlite import context
 from discord.ext import commands, tasks
-import discord
 import os
 import aiosqlite
-import aiohttp
 import jinja2
+import pickledb
+import asyncio
+
+from update_lists import PERSIST_DB
 
 app = web.Application()
 routes = web.RouteTableDef()
 
 aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader('src/web_interface/templates'))
 
+PERSIST = 'runtime/persist.json'
 DATABASE = 'runtime/links.db'
+
+persist_db = pickledb.load(PERSIST, False) 
 
 class WebInterface(commands.Cog):
     def __init__(self, client) -> None:
@@ -23,9 +26,12 @@ class WebInterface(commands.Cog):
 
         @routes.get('/')
         async def WebInterfaceHandler(request):
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(None, persist_db._loaddb)
             async with aiosqlite.connect(DATABASE) as db:
                 async with db.execute_fetchall('''SELECT Name, Platform, StreamName, Link, Twitter, IsLive FROM LJLInfo''') as content:
                     context = {
+                        'last_update': persist_db.get('last_update'),
                         'players' : content
                     }
                     response = aiohttp_jinja2.render_template('main.jinja2', request, context=context)

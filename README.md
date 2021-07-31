@@ -3,7 +3,7 @@
 Quick 'n' (sorta) clunky stream monitor for OpenREC, Twitch & Mildom
 
 Hot Instructions:
-- Place `discord.key` and `twitch.key` into the `runtime` directory (created after first launch)
+- Add your secrets into `config.ini` in the `runtime` directory (created after first launch)
 - Populate data (sample script included)
 - Change the default channel (`src/update_lists.py`)
 - At this point the bot should be ready to blast' updates.
