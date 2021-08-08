@@ -13,6 +13,7 @@ import configparser
 import datetime, pytz
 import pickledb
 
+from colored_output import colors
 
 SECRETS = 'runtime/config.ini'
 PERSIST_DB = 'runtime/persist.json'
@@ -117,7 +118,7 @@ class UpdatePlayersStatus(commands.Cog):
         print(f"Took {(time.time()-start_time)}s")
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(None, persist_db.set, 'last_update', f"{str(datetime.datetime.now(pytz.timezone('Asia/Tokyo')))[:-16]} JST")
-        print(f"Iteration {self.update_loop.current_loop} completed. Next check scheduled at {self.update_loop.next_iteration}")
+        print(f"Iteration {colors.OKGREEN}{self.update_loop.current_loop}{colors.ENDC} completed. Next check scheduled at {colors.OKGREEN}{self.update_loop.next_iteration}{colors.ENDC}")
 
     @staticmethod
     async def async_check_live_twitch_player(helix: twitch.Helix, streamName: str) -> bool:
@@ -125,10 +126,10 @@ class UpdatePlayersStatus(commands.Cog):
         try:
             return await asyncio.wait_for(loop.run_in_executor(None, UpdatePlayersStatus.check_live_twitch_player, helix, streamName), timeout=15.0)
         except asyncio.TimeoutError:
-            print(f"Stream {streamName} check timed out.")
+            print(f"Stream {streamName} check {colors.WARNING}timed out.{colors.ENDC}")
             return None, None, None
         except Exception as e:
-            print(f"Exception while checking stream {streamName}: {e}")
+            print(f"{colors.FAIL}Exception while checking stream {streamName}: {e} {colors.ENDC}")
             return None, None, None
 
     @staticmethod
@@ -137,7 +138,7 @@ class UpdatePlayersStatus(commands.Cog):
         try:
             return await asyncio.wait_for(loop.run_in_executor(None, UpdatePlayersStatus.check_live_mildom_player, streamName), timeout=15.0)
         except asyncio.TimeoutError:
-            print(f"{streamName} check timed out.")
+            print(f"{streamName} check {colors.WARNING}timed out.{colors.ENDC}")
             return None, None, None
         except Exception as e:
             print(f"Exception while checking stream {streamName}: {e}")
@@ -147,20 +148,20 @@ class UpdatePlayersStatus(commands.Cog):
     def check_live_twitch_player(helix:twitch.Helix, streamName: str) -> bool:
         user = helix.user(streamName)
         if user.is_live:
-            print(f"Stream {streamName} is online")
+            print(f"Stream {streamName} {colors.OKGREEN}is online{colors.ENDC}")
             return user.is_live, user.stream.title, user.stream.thumbnail_url.format(width=1280, height=720)
         else:
-            print(f"Stream {streamName} is offline")
+            print(f"Stream {streamName} {colors.OKBLUE}is offline{colors.ENDC}")
             return user.is_live, None, None
         
     @staticmethod
     def check_live_mildom_player(streamName: int) -> bool:
         user = mildom.User(streamName)
         if user.is_live:
-            print(f"Stream {streamName} is online")
+            print(f"Stream {streamName} {colors.OKGREEN}is online{colors.ENDC}")
             return user.is_live, user.latest_live_title, user.latest_live_thumbnail
         else:
-            print(f"Stream {streamName} is offline")
+            print(f"Stream {streamName} {colors.OKBLUE}is offline{colors.ENDC}")
             return user.is_live, None, None
 
 
@@ -178,11 +179,11 @@ class UpdatePlayersStatus(commands.Cog):
                 live_span_tag = soup.find('div', {'class': 'c-content__title'})
                 if live_span_tag:
                     if live_span_tag.text == 'Live':
-                        print(f"Stream {streamName} is online")
+                        print(f"Stream {streamName} {colors.OKGREEN}is online{colors.ENDC}")
                         img_link = soup.find('img', {'class': 'p-animation__thumbnail'})['src']
                         title = soup.find('a', {'class': 'c-thumbnailVideo__title'})['title']
                         return live_span_tag.text == 'Live', title, img_link
-                print(f"Stream {streamName} is offline")
+                print(f"Stream {streamName} {colors.OKBLUE}is offline{colors.ENDC}")
                 return False, None, None
         except Exception as e:
             print(f"Exception while checking stream {streamName}: {e}")
