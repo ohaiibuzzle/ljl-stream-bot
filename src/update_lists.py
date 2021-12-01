@@ -119,8 +119,14 @@ class UpdatePlayersStatus(commands.Cog):
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(None, persist_db.set, 'last_update', f"{str(datetime.datetime.now(pytz.timezone('Asia/Tokyo')))[:-16]} JST")
         print(f"Iteration {colors.OKGREEN}{self.update_loop.current_loop}{colors.ENDC} completed. Next check scheduled at {colors.OKGREEN}{self.update_loop.next_iteration}{colors.ENDC}")
+    
+    @update_loop.before_loop
+    def update_loop_wait_ready():
+        print('Waiting for connection')
+        await self.client.wait_until_ready()
+        
 
-    @staticmethod
+    @staticmetho
     async def async_check_live_twitch_player(helix: twitch.Helix, streamName: str) -> bool:
         loop = asyncio.get_event_loop()
         try:
