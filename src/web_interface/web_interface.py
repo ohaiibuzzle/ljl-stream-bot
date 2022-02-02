@@ -1,44 +1,43 @@
 from aiohttp import web
-import aiohttp_jinja2
 from discord.ext import commands, tasks
 import os
-import aiosqlite
-import jinja2
 import pickledb
-import asyncio
 
-from update_lists import PERSIST_DB
+from . import db_interface
+
+from update_lists import PERSIST_DB, DATABASE
 
 app = web.Application()
 routes = web.RouteTableDef()
 
-aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader('src/web_interface/templates'))
-
-PERSIST = 'runtime/persist.json'
-DATABASE = 'runtime/links.db'
-
-persist_db = pickledb.load(PERSIST, False) 
+persist_db = pickledb.load(PERSIST_DB, False) 
 
 class WebInterface(commands.Cog):
     def __init__(self, client) -> None:
         self.client = client
         self.web_server.start()
 
+        @routes.get('/api/last_update')
+        async def last_update(request):
+            return web.json_response({'time': persist_db.get('last_update')})
+
+        @routes.get('/api/teams')
+        async def get_teams(request):
+            return web.json_response(await db_interface.get_teams())
+
+        @routes.get('/api/team/{team}')
+        async def get_team_members(request):
+            if request.match_info['team'] == 'All':
+                return web.json_response(await db_interface.get_all_players())
+            return web.json_response(await db_interface.get_team_members(request.match_info['team']))
+
         @routes.get('/')
-        async def WebInterfaceHandler(request):
-            loop = asyncio.get_event_loop()
-            await loop.run_in_executor(None, persist_db._loaddb)
-            async with aiosqlite.connect(DATABASE) as db:
-                async with db.execute_fetchall('''SELECT Name, Platform, StreamName, Link, Twitter, IsLive FROM LJLInfo''') as content:
-                    context = {
-                        'last_update': persist_db.get('last_update'),
-                        'players' : content
-                    }
-                    response = aiohttp_jinja2.render_template('main.jinja2', request, context=context)
-                    return response
+        async def index(request):
+            return web.HTTPPermanentRedirect('/index.html')
 
         self.webserver_port = os.environ.get('PORT', 5000)
         app.add_routes(routes)
+        app.router.add_static('/', f'{os.path.dirname(db_interface.__file__)}/content')
 
     @tasks.loop()
     async def web_server(self):

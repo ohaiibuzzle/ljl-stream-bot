@@ -121,12 +121,12 @@ class UpdatePlayersStatus(commands.Cog):
         print(f"Iteration {colors.OKGREEN}{self.update_loop.current_loop}{colors.ENDC} completed. Next check scheduled at {colors.OKGREEN}{self.update_loop.next_iteration}{colors.ENDC}")
     
     @update_loop.before_loop
-    def update_loop_wait_ready():
+    async def update_loop_wait_ready(self):
         print('Waiting for connection')
-        await self.client.wait_until_ready()
+        return await self.client.wait_until_ready()
         
 
-    @staticmetho
+    @staticmethod
     async def async_check_live_twitch_player(helix: twitch.Helix, streamName: str) -> bool:
         loop = asyncio.get_event_loop()
         try:
