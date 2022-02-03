@@ -63,7 +63,7 @@ class UpdatePlayersStatus(commands.Cog):
         async with aiosqlite.connect(DATABASE) as db:
             q = await db.execute('''SELECT Name, StreamName, IsLive, Link, Platform, Twitter FROM LJLInfo''')
             async for player in q:
-                embed_thumbnail = "https://unavatar.io/twitter/" + player[5][1:] + self.fallback if player[5] else None
+                embed_thumbnail = "https://unavatar.io/twitter/" + player[5] + self.fallback if player[5] else None
                 if (player[4] == 'Twitch'):
                     status, stream_title, stream_thumbnail = await UpdatePlayersStatus.async_check_live_twitch_player(helix, player[1])
                     if status is None:
@@ -75,10 +75,10 @@ class UpdatePlayersStatus(commands.Cog):
                             await channel.send(embed=embed, file=thumb_file)
                         else:
                             await channel.send(embed=embed)
-                        await db.execute('''UPDATE LJLInfo SET IsLive = 1 WHERE StreamName=:streamName''', {'streamName': player[1]})
+                        await db.execute('''UPDATE LJLInfo SET IsLive = 1 WHERE StreamName=:streamName AND Platform=:platform''', {'streamName': player[1], 'platform': player[4]})
                         await db.commit()
                     elif (not status and player[2] == 1):
-                        await db.execute('''UPDATE LJLInfo SET IsLive = 0 WHERE StreamName=:streamName''', {'streamName': player[1]})
+                        await db.execute('''UPDATE LJLInfo SET IsLive = 0 WHERE StreamName=:streamName AND Platform=:platform''', {'streamName': player[1], 'platform': player[4]})
                         await db.commit()
                 elif (player[4] == 'Mildom'):
                     status, stream_title, stream_thumbnail = await UpdatePlayersStatus.async_check_live_mildom_player(int(player[1]))
@@ -91,10 +91,10 @@ class UpdatePlayersStatus(commands.Cog):
                             await channel.send(embed=embed, file=thumb_file)
                         else:
                             await channel.send(embed=embed)
-                        await db.execute('''UPDATE LJLInfo SET IsLive = 1 WHERE StreamName=:streamName''', {'streamName': player[1]})
+                        await db.execute('''UPDATE LJLInfo SET IsLive = 1 WHERE StreamName=:streamName AND Platform=:platform''', {'streamName': player[1], 'platform': player[4]})
                         await db.commit()
                     elif (not status and player[2] == 1):
-                        await db.execute('''UPDATE LJLInfo SET IsLive = 0 WHERE StreamName=:streamName''', {'streamName': player[1]})
+                        await db.execute('''UPDATE LJLInfo SET IsLive = 0 WHERE StreamName=:streamName AND Platform=:platform''', {'streamName': player[1], 'platform': player[4]})
                         await db.commit()
                 elif (player[4] == 'OPENREC.tv'):
                     status, stream_title, stream_thumbnail = await UpdatePlayersStatus.check_live_openrectv_player(player[1])
@@ -107,10 +107,10 @@ class UpdatePlayersStatus(commands.Cog):
                             await channel.send(embed=embed, file=thumb_file)
                         else:
                             await channel.send(embed=embed)
-                        await db.execute('''UPDATE LJLInfo SET IsLive = 1 WHERE StreamName=:streamName''', {'streamName': player[1]})
+                        await db.execute('''UPDATE LJLInfo SET IsLive = 1 WHERE StreamName=:streamName AND Platform=:platform''', {'streamName': player[1], 'platform': player[4]})
                         await db.commit()
                     elif (not status and player[2] == 1):
-                        await db.execute('''UPDATE LJLInfo SET IsLive = 0 WHERE StreamName=:streamName''', {'streamName': player[1]})
+                        await db.execute('''UPDATE LJLInfo SET IsLive = 0 WHERE StreamName=:streamName AND Platform=:platform''', {'streamName': player[1], 'platform': player[4]})
                         await db.commit()
                 else:
                     continue
