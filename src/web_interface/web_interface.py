@@ -2,6 +2,7 @@ from aiohttp import web
 from discord.ext import commands, tasks
 import os
 import pickledb
+import asyncio
 
 from . import db_interface
 
@@ -19,6 +20,8 @@ class WebInterface(commands.Cog):
 
         @routes.get('/api/last_update')
         async def last_update(request):
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(None, persist_db._loaddb)
             return web.json_response({'time': persist_db.get('last_update')})
 
         @routes.get('/api/teams')
