@@ -95,9 +95,17 @@ class UpdatePlayersStatus(commands.Cog):
                             embed_thumbnail,
                         )
                         if thumb_file:
-                            await channel.send(embed=embed, file=thumb_file)
+                            try:
+                                await channel.send(embed=embed, file=thumb_file)
+                            except discord.errors.DiscordException as e:
+                                print(f"{colors.FAIL} Discord exception: {e}")
+                                continue
                         else:
-                            await channel.send(embed=embed)
+                            try:
+                                await channel.send(embed=embed)
+                            except discord.errors.DiscordException as e:
+                                print(f"{colors.FAIL} Discord exception: {e}")
+                                continue
                         await db.execute(
                             """UPDATE LJLInfo SET IsLive = 1 WHERE StreamName=:streamName AND Platform=:platform""",
                             {"streamName": player[1], "platform": player[4]},
@@ -131,9 +139,17 @@ class UpdatePlayersStatus(commands.Cog):
                             embed_thumbnail,
                         )
                         if thumb_file:
-                            await channel.send(embed=embed, file=thumb_file)
+                            try:
+                                await channel.send(embed=embed, file=thumb_file)
+                            except discord.errors.DiscordException as e:
+                                print(f"{colors.FAIL} Discord exception: {e}")
+                                continue
                         else:
-                            await channel.send(embed=embed)
+                            try:
+                                await channel.send(embed=embed)
+                            except discord.errors.DiscordException as e:
+                                print(f"{colors.FAIL} Discord exception: {e}")
+                                continue
                         await db.execute(
                             """UPDATE LJLInfo SET IsLive = 1 WHERE StreamName=:streamName AND Platform=:platform""",
                             {"streamName": player[1], "platform": player[4]},
@@ -165,9 +181,17 @@ class UpdatePlayersStatus(commands.Cog):
                             embed_thumbnail,
                         )
                         if thumb_file:
-                            await channel.send(embed=embed, file=thumb_file)
+                            try:
+                                await channel.send(embed=embed, file=thumb_file)
+                            except discord.errors.DiscordException as e:
+                                print(f"{colors.FAIL} Discord exception: {e}")
+                                continue
                         else:
-                            await channel.send(embed=embed)
+                            try:
+                                await channel.send(embed=embed)
+                            except discord.errors.DiscordException as e:
+                                print(f"{colors.FAIL} Discord exception: {e}")
+                                continue
                         await db.execute(
                             """UPDATE LJLInfo SET IsLive = 1 WHERE StreamName=:streamName AND Platform=:platform""",
                             {"streamName": player[1], "platform": player[4]},
